@@ -1,0 +1,110 @@
+:Class git
+
+    ⎕IO←⎕ML←1
+
+    :field _Repo←''
+
+    :property Repo
+    :access public
+        ∇ r←get
+          r←_Repo
+        ∇
+    :endproperty
+
+    ∇ make folder
+      :Access public
+      :Implements constructor
+      _Repo←folder
+    ∇
+
+
+    ∇ r←SetRepo folder
+      :Access public shared
+      :If 0∊⍴r←checkRepo folder
+          r←##.⎕NEW ⎕THIS folder
+      :EndIf
+    ∇
+
+    ∇ r←checkRepo folder
+      :Access shared
+      :Trap 0
+          →0⍴⍨~0∊⍴r←(1≠⎕NEXISTS folder)/'Folder "',folder,'" not found'
+          →0⍴⍨~0∊⍴r←(1≠1 ⎕NINFO folder)/'"',folder,'" is not a folder'
+          →0⍴⍨~0∊⍴r←(1≠⎕NEXISTS folder,'/.git')/'Folder "',folder,'" is not a git repository'
+          r←(1≠1 ⎕NINFO folder,'/.git')/'Folder "',folder,'" is not a git repository'
+      :Else
+          r←⎕DMX.((∊2↑DM),':',Message)
+      :EndTrap
+    ∇
+
+    ∇ check;msg
+      msg ⎕SIGNAL 444/⍨~0∊⍴msg←checkRepo _Repo
+    ∇
+
+    ∇ r←{ok}do cmd;f
+      :Access public
+      ok←{6::⍵ ⋄ ok}0 ⍝ ok=1 means don't expect a non-empty result from ⎕SH
+      r←⎕SH'cd ',_Repo,' && git ',cmd
+      →0⍴⍨ok∧f←0∊⍴r
+      ('"',cmd,'" failed')⎕SIGNAL f/445
+    ∇
+
+    ∇ r←Branches;current
+      :Access public
+      check
+      r←deb¨do'branch -v'
+      current←'*'=⊃¨r
+      r[⍸current]↓⍨←2 ⍝ drop '* '
+      r←↑{⍵⊆⍨~m∧2≥+\m←' '=⍵}¨r
+      r⌷⍨←⊂⍒current
+    ∇
+
+    ∇ r←CurrentBranch
+      :Access public
+      check
+      r←deb¨do'branch'
+      r←2↓(⍸'*'=⊃¨r)⊃r
+    ∇
+
+    ∇ r←BranchExists branch
+      :Access public
+      check
+      r←(⊂branch)∊Branches[;1]
+    ∇
+
+    ∇ r←CheckoutBranch branch
+      :Access public
+      check
+      ('Branch "',branch,'" does not exist')⎕SIGNAL 449/⍨~BranchExists branch
+      r←1 do'checkout ',branch
+      ('Could not checkout branch "',branch,'"')⎕SIGNAL 448/⍨branch≢CurrentBranch
+      r←'Branch "',branch,'" is now the current branch'
+    ∇
+
+    ∇ r←CreateBranch branch;cb
+      :Access public
+      check
+      ('Branch "',branch,'" already exists')⎕SIGNAL 446/⍨BranchExists branch
+      cb←CurrentBranch
+      r←1 do'branch ',branch
+      ('Could not create branch "',branch,'"')⎕SIGNAL 447/⍨~BranchExists branch
+      r←CheckoutBranch branch
+      r←'New current branch "',branch,'" created from branch "',cb,'"'
+    ∇
+
+    ∇ r←Status
+      :Access public
+      check
+      r←⍪do'status'
+    ∇
+
+    ∇ r←from MergeInto to
+      :Access public
+    ∇
+
+
+
+⍝ utils
+    deb←{1↓¯1↓{⍵/⍨~'  '⍷⍵}' ',⍵,' '}
+
+:EndClass
