@@ -1,0 +1,7 @@
+ GitBranch folderBranch;branch;folder;t
+⍝ folderBranch is folder / branch name
+ folderBranch↓⍨←t←'/'=⊣/folderBranch
+ (folder branch)←folderBranch⊆⍨~⌽<\'/'=⌽folderBranch
+ folder,⍨←t/'/'
+ ('Folder "',folder,'" not found')⎕SIGNAL 22{0::1 ⋄ ⍺/⍨1≠1 ⎕NINFO ⍵}folder
+ ('Folder "',folder,'" is not a Git repository')⎕SIGNAL 11{0::1 ⋄ ⍺/⍨1≠1 ⎕NINFO ⍵,'/.git'}folder
